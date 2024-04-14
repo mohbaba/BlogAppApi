@@ -68,8 +68,10 @@ public class PostServiceImpl implements PostService{
         return null;
     }
 
-//    @Override
-//    public List<Post> findPostsByUsername(String username) {
-//        return null;
-//    }
+    @Override
+    public List<Post> findAllPosts() {
+
+        return postRepository.findAll();
+    }
+
 }

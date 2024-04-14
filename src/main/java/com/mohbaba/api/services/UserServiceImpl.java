@@ -4,17 +4,22 @@ import com.mohbaba.api.data.models.Post;
 import com.mohbaba.api.data.models.User;
 import com.mohbaba.api.data.models.View;
 import com.mohbaba.api.data.repositories.UserRepository;
+import com.mohbaba.api.dto.requests.CommentRequest;
 import com.mohbaba.api.dto.requests.PostRequest;
 import com.mohbaba.api.dto.requests.RegisterUserRequest;
 import com.mohbaba.api.dto.requests.ViewRequest;
 import com.mohbaba.api.dto.responses.RegisterUserResponse;
+import com.mohbaba.api.exceptions.UserNotFoundException;
 import com.mohbaba.api.exceptions.UsernameExistsException;
+import com.mohbaba.api.utils.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 import static com.mohbaba.api.utils.Mapper.map;
+import static com.mohbaba.api.utils.Mapper.mapViewTo;
+
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -25,12 +30,14 @@ public class UserServiceImpl implements UserService{
     private PostService postService;
     @Autowired
     private ViewService viewService;
+    @Autowired
+    private CommentService commentService;
 
     @Override
     public RegisterUserResponse registerUser(RegisterUserRequest registerUserRequest) {
         validate(registerUserRequest.getUsername());
-        User user = map(registerUserRequest);
-        RegisterUserResponse response = map(user);
+        User user = Mapper.map(registerUserRequest);
+        RegisterUserResponse response = Mapper.map(user);
         userRepository.save(user);
         return response;
     }
@@ -50,6 +57,17 @@ public class UserServiceImpl implements UserService{
         User user = userRepository.findByUsername(postRequest.getUsername());
         Post post = map(postRequest);
         postService.addPost(user,post);
+    }
+    
+    @Override
+    public void  view(ViewRequest viewRequest) {
+        User user = userRepository.findByUsername(viewRequest.getViewerUsername());
+        Post post = postService.findPost(viewRequest.getPostId());
+        View view = mapViewTo(user);
+        viewService.save(view);
+        viewService.add(post, view);
+        postService.save(post);
+
     }
 
 
@@ -71,24 +89,37 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public long getNumberOfViews(PostRequest postRequest) {
-        Post post = postService.findPostBy(postRequest.getUsername());
-
+    public long getNumberOfViews(ViewRequest view) {
+        Post post = postService.findPost(view.getPostId());
         return post.getViews().size();
     }
 
+    
+
     @Override
-    public void view(ViewRequest viewRequest) {
-        User user = userRepository.findByUsername(viewRequest.getViewerUsername());
-        View view = new View();
-        view.setViewer(user);
+    public List<Post> getAllPosts() {
+        return postService.findAllPosts();
+    }
 
-        Post post = postService.findPost(viewRequest.getPostId());
-        List<View> postViews = post.getViews();
-        postViews.add(view);
-        post.setViews(postViews);
+    @Override
+    public void comment(CommentRequest commentRequest) {
+        User user = userRepository.findByUsername(commentRequest.getCommenterUsername());
+        Post post = commentService.addComment(commentRequest, user);
         postService.save(post);
-        viewService.addView(view);
+    }
 
+
+
+
+    @Override
+    public long getTotalNumberOfComments() {
+        return commentService.count();
+    }
+
+    @Override
+    public User findUser(String username) {
+        User user = userRepository.findByUsername(username);
+        if (user == null)throw new UserNotFoundException(String.format("%s not found",username));
+        return user;
     }
 }

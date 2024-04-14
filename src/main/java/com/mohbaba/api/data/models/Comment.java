@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Comment {
     @Id
     private String id;
-    @DBRef
     private User commenter;
     private String comment;
 }

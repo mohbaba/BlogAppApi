@@ -1,6 +1,8 @@
 package com.mohbaba.api;
 
+import com.mohbaba.api.data.models.Post;
 import com.mohbaba.api.data.repositories.UserRepository;
+import com.mohbaba.api.dto.requests.CommentRequest;
 import com.mohbaba.api.dto.requests.PostRequest;
 import com.mohbaba.api.dto.requests.ViewRequest;
 import com.mohbaba.api.exceptions.EmptyPostException;
@@ -13,13 +15,15 @@ import com.mohbaba.api.dto.requests.RegisterUserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class UserServiceTest {
 
     @Autowired
-    private UserService   userService;
+    private UserService userService;
     @Autowired
     private UserRepository userRepository;
 
@@ -95,9 +99,36 @@ public class UserServiceTest {
         postRequest.setTitle("Title");
         postRequest.setContent("Content");
         userService.post(postRequest);
+
+        List<Post> posts = userService.getAllPosts();
+        viewRequest.setPostId(posts.getFirst().getId());
+        viewRequest.setViewerUsername("username");
         userService.view(viewRequest);
 
+        assertEquals(1L,userService.getNumberOfViews(viewRequest));
         assertEquals(1L,userService.getTotalNumberOfViews());
-        assertEquals(1L,userService.getNumberOfViews(postRequest));
+    }
+
+    @Test
+    public void userCommentsOnPost_CommentsForPostIncreases(){
+        PostRequest postRequest = new PostRequest();
+        CommentRequest commentRequest = new CommentRequest();
+        ViewRequest viewRequest = new ViewRequest();
+        postRequest.setUsername("username");
+        postRequest.setTitle("Title");
+        postRequest.setContent("Content");
+        userService.post(postRequest);
+
+        List<Post> posts = userService.getAllPosts();
+        commentRequest.setPostId(posts.getFirst().getId());
+        commentRequest.setCommenterUsername("username");
+        commentRequest.setComment("New Comment");
+        userService.comment(commentRequest);
+//        viewRequest.setPostId(posts.getFirst().getId());
+//        viewRequest.setViewerUsername("username");
+//        userService.view(viewRequest);
+
+        assertEquals(1L,posts.getFirst().getComments().size());
+        assertEquals(1L,userService.getTotalNumberOfComments());
     }
 }

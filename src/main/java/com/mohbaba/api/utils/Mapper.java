@@ -1,7 +1,10 @@
 package com.mohbaba.api.utils;
 
+import com.mohbaba.api.data.models.Comment;
 import com.mohbaba.api.data.models.Post;
 import com.mohbaba.api.data.models.User;
+import com.mohbaba.api.data.models.View;
+import com.mohbaba.api.dto.requests.CommentRequest;
 import com.mohbaba.api.dto.requests.PostRequest;
 import com.mohbaba.api.dto.requests.RegisterUserRequest;
 import com.mohbaba.api.dto.responses.RegisterUserResponse;
@@ -29,5 +32,19 @@ public class Mapper {
         post.setContent(postRequest.getContent());
         post.setTitle(postRequest.getTitle());
         return post;
+    }
+
+    public static View mapViewTo(User user) {
+        View view = new View();
+        view.setViewer(user);
+        return view;
+    }
+
+    public static Comment map(CommentRequest commentRequest, User user) {
+        Comment comment = new Comment();
+
+        comment.setCommenter(user);
+        comment.setComment(commentRequest.getComment());
+        return comment;
     }
 }
